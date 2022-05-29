@@ -2,67 +2,98 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+
+#include "input_reader.h"
 #include "stat_reader.h"
 #include "geo.h"
 
+using namespace std::literals;
+
 namespace transport {
 
+void StatReader::LoadQueries(std::istream& input) {
+    int line_count = 0;
+    for (std::string line; getline(input, line) && !line.empty();) {
+        if(line_count == 0) {
+            line_count = std::stoi(line);
+        } else
+        if(line_count > 0){
+            queries_.push_back(line);
+            if(--line_count == 0){
+                break;
+            }
+        }
+    }
+}
+
+void StatReader::ExecQueries(std::ostream& output) {
+    for(auto& line : queries_) {
+        auto [query, name] = detail::Split(line, ' ');
+        if(query == "Bus"s) {
+            output << FormatBusInfo(name) << std::endl;
+        } else {
+            output << FormatStopInfo(name) << std::endl;
+        }
+    }
+}
+
 std::string StatReader::FormatStopInfo(std::string_view name) {
+    std::ostringstream osstream;
     StopInfo stop_info = catalogue_.GetStopInfo(name);
-    std::string res("Stop " + stop_info.name + ": ");
+    osstream << "Stop "s << stop_info.name << ": "s;
     if(stop_info.ptr == nullptr) {
-        res += "not found";
+        osstream << "not found"s;
     } else
     if(stop_info.buses == nullptr) {
-        res += "no buses";
+        osstream << "no buses"s;
     } else {
-        res += "buses";
+        osstream << "buses"s;
         std::vector<std::string_view> buses;
         for(auto bus : *stop_info.buses) {
             buses.push_back(bus->name);
         }
         std::sort(buses.begin(), buses.end());
         for(auto bus : buses) {
-            res += " " + std::string(bus);
+            osstream << " "s << bus;
         }
     }
-    return res;
+    return osstream.str();
 }
 
 std::string StatReader::FormatBusInfo(std::string_view name) {
+    std::ostringstream osstream;
+    osstream << std::setprecision(6);
     BusInfo bus_info = catalogue_.GetBusInfo(name);
-    std::string res("Bus " + bus_info.name + ": ");
+
+    osstream << "Bus "s << bus_info.name << ": "s;
     if(bus_info.ptr == nullptr) {
-        return res + "not found";
+        osstream << "not found"s;
+        return osstream.str();
     }
 
     auto& stops = bus_info.ptr->stops;
     int stop_count = stops.size();
     std::unordered_set<Stop*> unic_stops;
-    double route_length = 0.0;
-    int route_length_distance = 0;
+    double route_length = 0.0, route_length_distance = 0.0;
     auto from_it = stops.begin();
     auto to_it = from_it + 1;
 
     while(to_it != stops.end()) {
         unic_stops.insert(*from_it);
-        auto distance = ComputeDistance((*from_it)->coordinates, (*to_it)->coordinates);
-        route_length += distance;
-        auto distance2 = catalogue_.GetDistance(const_cast<Stop*>(*from_it),
-                                     const_cast<Stop*>(*to_it));
-        route_length_distance += distance2;
+        route_length += ComputeDistance((*from_it)->coordinates, (*to_it)->coordinates);
+        route_length_distance += catalogue_.GetDistance(
+                                    const_cast<Stop*>(*from_it),
+                                    const_cast<Stop*>(*to_it));
         ++from_it;
         ++to_it;
     }
 
-    std::ostringstream osstream;
-    osstream << std::setprecision(6);
-    osstream << route_length_distance/route_length;
+    osstream << stop_count << " stops on route, "s <<
+                unic_stops.size() << " unique stops, "s <<
+                route_length_distance << " route length, "s <<
+                route_length_distance/route_length << " curvature"s;
 
-    return res + std::to_string(stop_count) + " stops on route, " +
-            std::to_string(unic_stops.size()) + " unique stops, " +
-            std::to_string(route_length_distance) + " route length, " +
-            osstream.str() + " curvature";
+    return osstream.str();
 }
 
 }

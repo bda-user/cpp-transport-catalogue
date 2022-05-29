@@ -2,17 +2,15 @@
 #include <sstream>
 
 #include "input_reader.h"
+#include "stat_reader.h"
+
+//#define ISSTR ;
 
 using namespace std::literals;
 
-void Load(std::istream& input) {
-    transport::TransportCatalogue catalogue;
-    transport::InputReader ireader(catalogue);
-    ireader.Load(input);
-}
-
 int main()
 {
+#ifdef ISSTR
     std::istringstream input{
         "13\n"
         "Stop Tolstopaltsevo: 55.611087, 37.20829, 3900m to Marushkino\n"
@@ -36,10 +34,21 @@ int main()
         "Stop Prazhskaya\n"
         "Stop Biryulyovo Zapadnoye"
     };
+#endif
 
-    //Load(input);
-    Load(std::cin);
+    transport::TransportCatalogue catalogue;
+    transport::InputReader ireader(catalogue);
+    transport::StatReader stat_reader(catalogue);
 
-    //std::cout << "*** Done! ***" << std::endl;
+#ifdef ISSTR
+    ireader.Load(input);
+    stat_reader.LoadQueries(input);
+#else
+    ireader.Load(std::cin);
+    stat_reader.LoadQueries(std::cin);
+#endif
+
+    stat_reader.ExecQueries(std::cout);
+
     return 0;
 }

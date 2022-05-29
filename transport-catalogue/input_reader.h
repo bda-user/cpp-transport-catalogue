@@ -14,7 +14,7 @@ namespace detail {
 
 std::pair<std::string_view, std::string_view> Split(std::string_view line, char by);
 
-std::string_view Lstrip(std::string_view line);
+std::string_view SpaceTrim(std::string_view line);
 
 std::pair<std::string_view, int> ParseDistance(std::string_view line_distance);
 
@@ -23,7 +23,7 @@ std::pair<std::string_view, int> ParseDistance(std::string_view line_distance);
 class InputReader {
 
 public:
-    InputReader(TransportCatalogue catalogue) : catalogue_(catalogue) {};
+    InputReader(TransportCatalogue& catalogue) : catalogue_(catalogue) {};
 
     void LoadStop(std::string_view line, QueriesDistances& queries_distances);
 
@@ -31,12 +31,10 @@ public:
 
     void LoadBuses(std::deque<std::string>& queries_buses);
 
-    void LoadQueries(std::deque<std::string>& queries);
-
     void Load(std::istream& input);
 
 private:
-    TransportCatalogue catalogue_;
+    TransportCatalogue& catalogue_;
 };
 
 }

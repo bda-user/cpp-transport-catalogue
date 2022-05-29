@@ -57,11 +57,11 @@ struct BusInfo {
 class TransportCatalogue {
 
 public:
-    void AddStop(std::string_view, double, double);
+    void AddStop(std::string_view name, Coordinates coords);
 
     const Stop* FindStop(std::string_view name);
 
-    void AddDistance(const Stop*, const Stop*, int);
+    void SetDistance(const Stop*, const Stop*, int);
 
     void AddBus(std::string_view, std::deque<Stop*>&&);
 

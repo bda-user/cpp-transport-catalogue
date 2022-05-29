@@ -4,8 +4,8 @@
 
 namespace transport {
 
-void TransportCatalogue::AddStop(std::string_view name, double lat, double lng){
-    stops_.push_back({std::string(name), lat, lng});
+void TransportCatalogue::AddStop(std::string_view name, Coordinates coords){
+    stops_.push_back({std::string(name), coords});
     auto& last_stop = stops_.back();
     stops_indx_.insert({last_stop.name, &last_stop});
 }
@@ -17,7 +17,7 @@ const Stop* TransportCatalogue::FindStop(std::string_view name) {
     return nullptr;
 }
 
-void TransportCatalogue::AddDistance(const Stop* from, const Stop* to, int distance) {
+void TransportCatalogue::SetDistance(const Stop* from, const Stop* to, int distance) {
     distances_.insert({{const_cast<Stop*>(from), const_cast<Stop*>(to)}, distance});
 }
 
