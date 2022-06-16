@@ -1,8 +1,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "input_reader.h"
-#include "stat_reader.h"
+#include "json_reader.h"
+#include "request_handler.h"
+#include "map_renderer.h"
 
 //#define ISSTR ;
 
@@ -10,45 +11,63 @@ using namespace std::literals;
 
 int main()
 {
+
 #ifdef ISSTR
-    std::istringstream input{
-        "13\n"
-        "Stop Tolstopaltsevo: 55.611087, 37.20829, 3900m to Marushkino\n"
-        "Stop Marushkino: 55.595884, 37.209755, 9900m to Rasskazovka, 100m to Marushkino\n"
-        "Bus 256: Biryulyovo Zapadnoye > Biryusinka > Universam > Biryulyovo Tovarnaya > Biryulyovo Passazhirskaya > Biryulyovo Zapadnoye\n"
-        "Bus 750: Tolstopaltsevo - Marushkino - Marushkino - Rasskazovka\n"
-        "Stop Rasskazovka: 55.632761, 37.333324, 9500m to Marushkino\n"
-        "Stop Biryulyovo Zapadnoye: 55.574371, 37.6517, 7500m to Rossoshanskaya ulitsa, 1800m to Biryusinka, 2400m to Universam\n"
-        "Stop Biryusinka: 55.581065, 37.64839, 750m to Universam\n"
-        "Stop Universam: 55.587655, 37.645687, 5600m to Rossoshanskaya ulitsa, 900m to Biryulyovo Tovarnaya\n"
-        "Stop Biryulyovo Tovarnaya: 55.592028, 37.653656, 1300m to Biryulyovo Passazhirskaya\n"
-        "Stop Biryulyovo Passazhirskaya: 55.580999, 37.659164, 1200m to Biryulyovo Zapadnoye\n"
-        "Bus 828: Biryulyovo Zapadnoye > Universam > Rossoshanskaya ulitsa > Biryulyovo Zapadnoye\n"
-        "Stop Rossoshanskaya ulitsa: 55.595579, 37.605757\n"
-        "Stop Prazhskaya: 55.611678, 37.603831\n"
-        "6\n"
-        "Bus 256\n"
-        "Bus 750\n"
-        "Bus 751\n"
-        "Stop Samara\n"
-        "Stop Prazhskaya\n"
-        "Stop Biryulyovo Zapadnoye"
+
+    std::istringstream jinput{
+"{"
+"  \"base_requests\": [ "
+"    {"
+"      \"type\": \"Stop\","
+"      \"name\": \"Biryulyovo Zapadnoye\","
+"      \"latitude\": 55.574371,"
+"      \"longitude\": 37.6517,"
+"      \"road_distances\": {\"Rossoshanskaya ulitsa\": 7500, \"Biryusinka\": 1800, \"Universam\": 2400 }"
+"    },"
+"    {"
+"      \"type\": \"Bus\","
+"      \"name\": \"256\","
+"      \"stops\": [\"Biryulyovo Zapadnoye\", \"Biryusinka\", \"Universam\", \"Biryulyovo Tovarnaya\", \"Biryulyovo Passazhirskaya\", \"Biryulyovo Zapadnoye\" ],"
+"      \"is_roundtrip\": true"
+"    }"
+"  ],"
+"  \"stat_requests\": ["
+"    { \"id\": 1, \"type\": \"Bus\", \"name\": \"256\" },"
+"    { \"id\": 2, \"type\": \"Stop\", \"name\": \"Biryulyovo Zapadnoye\" }"
+"  ]"
+"}"s
     };
+
+    std::istringstream jinput3{
+"{"
+"  \"render_settings\": { "
+"      \"width\": 600,"
+"      \"height\": 400,"
+"      \"padding\": 50,"
+"      \"line_width\": 14,"
+"      \"color_palette\": ["
+"        \"green\","
+"        [255, 160, 0],"
+"        \"red\""
+"      ]"
+"    }"
+"}"s
+    };
+
 #endif
 
     transport::TransportCatalogue catalogue;
-    transport::InputReader ireader(catalogue);
-    transport::StatReader stat_reader(catalogue);
+    renderer::MapRenderer renderer;
+    transport::RequestHandler request_handler(catalogue, renderer);
 
 #ifdef ISSTR
-    ireader.Load(input);
-    stat_reader.LoadQueries(input);
+    transport::JsonReader jreader(catalogue, json::Load(jinput3).GetRoot(), request_handler);
 #else
-    ireader.Load(std::cin);
-    stat_reader.LoadQueries(std::cin);
+    transport::JsonReader jreader(catalogue, json::Load(std::cin).GetRoot(), request_handler);
 #endif
 
-    stat_reader.ExecQueries(std::cout);
+    jreader.FillDataBase();
+    jreader.ExecQueries();
 
     return 0;
 }

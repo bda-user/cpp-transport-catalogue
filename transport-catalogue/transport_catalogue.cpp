@@ -4,7 +4,7 @@
 
 namespace transport {
 
-void TransportCatalogue::AddStop(std::string_view name, Coordinates coords){
+void TransportCatalogue::AddStop(std::string_view name, geo::Coordinates coords){
     stops_.push_back({std::string(name), coords});
     auto& last_stop = stops_.back();
     stops_indx_.insert({last_stop.name, &last_stop});
@@ -21,8 +21,8 @@ void TransportCatalogue::SetDistance(const Stop* from, const Stop* to, int dista
     distances_.insert({{const_cast<Stop*>(from), const_cast<Stop*>(to)}, distance});
 }
 
-void TransportCatalogue::AddBus(std::string_view name, std::deque<Stop*>&& stops) {
-    buses_.push_back({std::string(name), std::move(stops)});
+void TransportCatalogue::AddBus(std::string_view name, std::deque<Stop*>&& stops, Stop* last_stop) {
+    buses_.push_back({std::string(name), std::move(stops), last_stop});
     auto& last_bus = buses_.back();
     buses_indx_.insert({last_bus.name, &last_bus});
     for(auto& stop : last_bus.stops) {
@@ -30,11 +30,11 @@ void TransportCatalogue::AddBus(std::string_view name, std::deque<Stop*>&& stops
     }
 }
 
-StopInfo TransportCatalogue::GetStopInfo(std::string_view stop_name) {
+StopInfo TransportCatalogue::GetStopInfo(std::string_view stop_name) const {
     std::string name(stop_name);
     if(auto it = stops_indx_.find(stop_name); it != stops_indx_.end()) {
         if(auto itb = stops_buses_indx_.find(it->second); itb != stops_buses_indx_.end()) {
-            return {std::move(name), it->second, &itb->second};
+            return {std::move(name), it->second, const_cast<std::unordered_set<transport::Bus*>*>(&itb->second)};
         }
         return {std::move(name), it->second, nullptr};
     } else {
@@ -42,7 +42,7 @@ StopInfo TransportCatalogue::GetStopInfo(std::string_view stop_name) {
     }
 }
 
-BusInfo TransportCatalogue::GetBusInfo(std::string_view bus_name) {
+BusInfo TransportCatalogue::GetBusInfo(std::string_view bus_name)  const {
     std::string name(bus_name);
     if(auto it = buses_indx_.find(bus_name); it != buses_indx_.end()) {
         return {std::move(name), it->second};
@@ -51,7 +51,7 @@ BusInfo TransportCatalogue::GetBusInfo(std::string_view bus_name) {
     }
 }
 
-int TransportCatalogue::GetDistance(Stop* from, Stop* to) {
+int TransportCatalogue::GetDistance(Stop* from, Stop* to)  const {
     if(auto it = distances_.find({from, to}); it != distances_.end()) {
         return it->second;
     } else
@@ -59,6 +59,10 @@ int TransportCatalogue::GetDistance(Stop* from, Stop* to) {
         return it->second;
     }
     return 0;
+}
+
+const std::unordered_map<std::string_view, Bus*>& TransportCatalogue::GetBussesIndex() const {
+    return buses_indx_;
 }
 
 void TransportCatalogue::PrintTest(){
@@ -101,6 +105,7 @@ void TransportCatalogue::PrintTest(){
         std::cout << std::endl;
     }
     std::cout << std::endl;
+
 }
 
 }
