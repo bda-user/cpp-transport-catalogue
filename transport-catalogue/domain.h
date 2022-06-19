@@ -14,8 +14,8 @@ struct Stop {
 };
 
 struct StopsPtr {
-    Stop* ptr1 = nullptr;
-    Stop* ptr2 = nullptr;
+    Stop* from_ptr = nullptr;
+    Stop* to_ptr = nullptr;
 
     bool operator==(const StopsPtr& other) const;
 
@@ -30,6 +30,12 @@ private:
     std::hash<Stop*> ptr_hasher_;
 };
 
+/*
+"last_stop" need for NoRound Bus. NoRound Bus has route: A - B - C, last_stop = C
+Full route: A - B - C - B - C
+In map.svg need drow stops A & C if: Bus = NoRound && A != C
+See json_reader.cpp line 56
+*/
 struct Bus {
     std::string name{""};
     std::deque<Stop*> stops{};

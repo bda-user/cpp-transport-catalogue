@@ -13,7 +13,7 @@ namespace transport {
 class TransportCatalogue {
 
 public:
-    void AddStop(std::string_view name, geo::Coordinates coords);
+    void AddStop(std::string_view name, const geo::Coordinates coords);
 
     const Stop* FindStop(std::string_view name);
 

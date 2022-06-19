@@ -66,7 +66,7 @@ Node LoadString(std::istream& input) {
         ++it;
     }
 
-    return Node(Node::Value{move(s)});
+    return Node(move(s));
 }
 
 Node LoadNull(istream& input) {
@@ -162,13 +162,13 @@ Node LoadNumber(std::istream& input) {
         if (is_int) {
             // Сначала пробуем преобразовать строку в int
             try {
-                return Node(Node::Value{std::stoi(parsed_num)});
+                return Node(std::stoi(parsed_num));
             } catch (...) {
                 // В случае неудачи, например, при переполнении,
                 // код ниже попробует преобразовать строку в double
             }
         }
-        return Node(Node::Value{std::stod(parsed_num)});
+        return Node(std::stod(parsed_num));
     } catch (...) {
         throw ParsingError("Failed to convert "s + parsed_num + " to number"s);
     }
@@ -186,7 +186,7 @@ Node LoadArray(istream& input) {
     if(c != ']')
         throw ParsingError("Array parsing error: no ]");
 
-    return Node(Node::Value{move(result)});
+    return Node(move(result));
 }
 
 
@@ -206,7 +206,7 @@ Node LoadDict(istream& input) {
     if(c != '}')
         throw ParsingError("Dict parsing error: no }");
 
-    return Node(Node::Value{move(result)});
+    return Node(move(result));
 }
 
 
@@ -234,97 +234,89 @@ Node LoadNode(istream& input) {
 
 }  // namespace
 
-Node::Node(Value value)
-    : value_(move(value)) {
-}
-
-Node::Node(const Node& node)
-    : value_(node.value_) {
-}
-
 Node::Node(const Document& doc)
     : Node(doc.GetRoot()) {
 }
 
 bool Node::IsString() const {
-    return std::holds_alternative<std::string>(value_);
+    return std::holds_alternative<std::string>(*this);
 }
 
 bool Node::IsInt() const {
-    return std::holds_alternative<int>(value_);
+    return std::holds_alternative<int>(*this);
 }
 bool Node::IsDouble() const {
-    return std::holds_alternative<double>(value_) ||
-            std::holds_alternative<int>(value_);
+    return std::holds_alternative<double>(*this) ||
+            std::holds_alternative<int>(*this);
 }
 
 bool Node::IsPureDouble() const {
-    return std::holds_alternative<double>(value_);
+    return std::holds_alternative<double>(*this);
 }
 
 bool Node::IsNull() const {
-    return std::holds_alternative<std::nullptr_t>(value_);
+    return std::holds_alternative<std::nullptr_t>(*this);
 }
 
 bool Node::IsBool() const {
-    return std::holds_alternative<bool>(value_);
+    return std::holds_alternative<bool>(*this);
 }
 
 bool Node::IsArray() const {
-    return std::holds_alternative<Array>(value_);
+    return std::holds_alternative<Array>(*this);
 }
 
 bool Node::IsMap() const {
-    return std::holds_alternative<Dict>(value_);
+    return std::holds_alternative<Dict>(*this);
 }
 
 const Array& Node::AsArray() const { 
     if(IsArray()) {
-        return std::get<Array>(value_);
+        return std::get<Array>(*this);
     }
     throw std::logic_error("Node::AsArray() wrong access"s);
 }
 
 const Dict& Node::AsMap() const {
     if(IsMap()) {
-        return std::get<Dict>(value_);
+        return std::get<Dict>(*this);
     }
     throw std::logic_error("Node::AsMap() wrong access"s);
 }
 
 int Node::AsInt() const {
     if(IsInt()) {
-        return std::get<int>(value_);
+        return std::get<int>(*this);
     }
     throw std::logic_error("Node::AsInt() wrong access"s);
 }
 
 double Node::AsDouble() const {
     if(IsPureDouble()) {
-        return std::get<double>(value_);
+        return std::get<double>(*this);
     } else
     if(IsInt()) {
-        return std::get<int>(value_);
+        return std::get<int>(*this);
     }
     throw std::logic_error("Node::AsDouble() wrong access"s);
 }
 
 const string& Node::AsString() const {
     if(IsString()) {
-        return std::get<string>(value_);
+        return std::get<string>(*this);
     }
     throw std::logic_error("Node::AsString() wrong access"s);
 }
 
 bool Node::AsBool() const {
     if(IsBool()) {
-        return std::get<bool>(value_);
+        return std::get<bool>(*this);
     }
     throw std::logic_error("Node::AsBool() wrong access"s);
 }
 
 const Node::Value& Node::GetValue() const {
-    return value_;
+    return *this;
 }
 
 bool operator==(const Node& lhs, const Node& rhs) {

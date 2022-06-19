@@ -26,20 +26,14 @@ using Number = std::variant<int, double>;
 
 class Document;
 
-class Node {
+class Node : public std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string> {
 public:
-    /* Реализуйте Node, используя std::variant */
+
     using Value = std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>;
 
-    template <typename Val>
-    Node(Val value)
-        : value_(value)  {
-    }
+    using variant::variant;
 
-    Node() {}
-    Node(Value value);
     Node(const Document& doc);
-    Node(const Node& node);
 
     bool IsString() const;
     bool IsInt() const;
@@ -58,8 +52,6 @@ public:
     bool AsBool() const;
     const Value& GetValue() const;
 
-private:
-    Value value_;
 };
 
 class Document {

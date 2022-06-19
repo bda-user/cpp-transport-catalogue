@@ -97,10 +97,7 @@ void MapRenderer::AddStopLabel(svg::Document& doc, const RouteStop& stop, const 
 
 svg::Document MapRenderer::RenderMap(const renderer::RenderLayers& layers,
                                      const renderer::RenderSettings& rs) const {
-    using namespace svg;
-    using namespace std;
-
-    vector<unique_ptr<svg::Drawable>> picture;
+    std::vector<std::unique_ptr<svg::Drawable>> picture;
     svg::Document doc;
 
     // Routs

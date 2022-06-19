@@ -4,7 +4,7 @@
 
 namespace transport {
 
-void TransportCatalogue::AddStop(std::string_view name, geo::Coordinates coords){
+void TransportCatalogue::AddStop(std::string_view name, const geo::Coordinates coords){
     stops_.push_back({std::string(name), coords});
     auto& last_stop = stops_.back();
     stops_indx_.insert({last_stop.name, &last_stop});

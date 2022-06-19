@@ -13,7 +13,15 @@ public:
                RequestHandler& request_handler)
         : catalogue_(catalogue), root_node_(std::move(node)), request_handler_(request_handler) {};
 
+    void FillDataBaseStops(const json::Array& base_reqs);
+
+    void FillDataBaseBuses(const json::Array& base_reqs);
+
     void FillDataBase();
+
+    void ExecQueryStop(std:: string stop_name, json::Dict& answer);
+
+    void ExecQueryBus(std:: string bus_name, json::Dict& answer);
 
     void ExecQueries();
 
