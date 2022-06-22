@@ -1,21 +1,24 @@
+#include <iostream>
+#include <sstream>
 #include <vector>
 #include <algorithm>
 
 #include "json_reader.h"
+#include "json_builder.h"
 
 namespace transport {
 
 void JsonReader::FillDataBaseStops(const json::Array& base_reqs) {
     for(auto& reqs : base_reqs) {
-        if(reqs.AsMap().at("type"s) != "Stop"s) continue;
-        auto& req = reqs.AsMap();
+        if(reqs.AsDict().at("type"s) != "Stop"s) continue;
+        auto& req = reqs.AsDict();
         catalogue_.AddStop(req.at("name"s).AsString(),
                            {req.at("latitude"s).AsDouble(),
                             req.at("longitude"s).AsDouble()});
     }
 
     for(auto& req_node : base_reqs) {
-        auto& req = req_node.AsMap();
+        auto& req = req_node.AsDict();
         if(req.at("type"s) != "Stop"s) continue;
 
         const auto& distances_it = req.find("road_distances"s);
@@ -25,7 +28,7 @@ void JsonReader::FillDataBaseStops(const json::Array& base_reqs) {
         if(from == nullptr) {
             continue;
         }
-        for(auto& [stop, distance] : distances_it->second.AsMap()){
+        for(auto& [stop, distance] : distances_it->second.AsDict()){
             auto to = catalogue_.FindStop(stop);
             if(to != nullptr) {
                 catalogue_.SetDistance(from, to, distance.AsInt());
@@ -36,8 +39,8 @@ void JsonReader::FillDataBaseStops(const json::Array& base_reqs) {
 
 void JsonReader::FillDataBaseBuses(const json::Array& base_reqs) {
     for(auto& reqs : base_reqs) {
-        if(reqs.AsMap().at("type"s) != "Bus"s) continue;
-        auto& req = reqs.AsMap();
+        if(reqs.AsDict().at("type"s) != "Bus"s) continue;
+        auto& req = reqs.AsDict();
         std::deque<Stop*> bus_stops;
 
         // no stops
@@ -64,8 +67,8 @@ void JsonReader::FillDataBaseBuses(const json::Array& base_reqs) {
 }
 
 void JsonReader::FillDataBase() {
-    const auto& base_reqs_it = root_node_.AsMap().find("base_requests"s);
-    if(base_reqs_it == root_node_.AsMap().end()) return;
+    const auto& base_reqs_it = root_node_.AsDict().find("base_requests"s);
+    if(base_reqs_it == root_node_.AsDict().end()) return;
     auto& base_reqs = base_reqs_it->second.AsArray();
 
     FillDataBaseStops(base_reqs);
@@ -75,41 +78,54 @@ void JsonReader::FillDataBase() {
     return;
 }
 
-void JsonReader::ExecQueryStop(std:: string stop_name, json::Dict& answer){
+json::Dict JsonReader::ExecQueryStop(std:: string stop_name, int req_id){
     using namespace std;
     using namespace json;
 
-    if(catalogue_.FindStop(stop_name) == nullptr) {
-        answer.insert(pair<string, string>("error_message"s, "not found"s));
-    } else {
-        vector<string_view> vec_buses;
-        const unordered_set<transport::BusPtr>* buses =
-                request_handler_.GetBusesByStop(stop_name);
-        if(buses != nullptr) {
-            for(const auto bus : *buses) {
-                vec_buses.push_back(bus->name);
-            }
-        }
-        std::sort(vec_buses.begin(), vec_buses.end());
-        Array arr_buses{};
-        for(auto bus : vec_buses) {
-            arr_buses.push_back(static_cast<string>(bus));
-        }
-        answer.insert(pair<string, Array>("buses"s, arr_buses));
+    if(catalogue_.FindStop(stop_name) == nullptr){
+        return json::Builder{}.StartDict()
+                            .Key("request_id"s).Value(req_id)
+                            .Key("error_message"s).Value("not found"s)
+                            .EndDict().Build().AsDict();
     }
+
+    vector<string_view> vec_buses;
+    const unordered_set<transport::BusPtr>* buses =
+            request_handler_.GetBusesByStop(stop_name);
+    if(buses != nullptr) {
+        for(const auto bus : *buses) {
+            vec_buses.push_back(bus->name);
+        }
+    }
+    std::sort(vec_buses.begin(), vec_buses.end());
+    Array arr_buses{};
+    for(auto bus : vec_buses) {
+        arr_buses.push_back(static_cast<string>(bus));
+    }
+
+    return json::Builder{}.StartDict()
+                        .Key("request_id"s).Value(req_id)
+                        .Key("buses"s).Value(arr_buses)
+                        .EndDict().Build().AsDict();
 }
 
-void JsonReader::ExecQueryBus(std:: string bus_name, json::Dict& answer) {
+json::Dict JsonReader::ExecQueryBus(std:: string bus_name, int req_id) {
     using namespace std;
 
     auto bus_stat = request_handler_.GetBusStat(bus_name);
     if(bus_stat) {
-        answer.insert(pair<string, double>("curvature"s, bus_stat->curvature));
-        answer.insert(pair<string, int>("route_length"s, bus_stat->route_length));
-        answer.insert(pair<string, int>("stop_count"s, bus_stat->stop_count));
-        answer.insert(pair<string, int>("unique_stop_count"s, bus_stat->unique_stop_count));
+        return json::Builder{}.StartDict()
+                            .Key("request_id"s).Value(req_id)
+                            .Key("curvature"s).Value(bus_stat->curvature)
+                            .Key("route_length"s).Value(bus_stat->route_length)
+                            .Key("stop_count"s).Value(bus_stat->stop_count)
+                            .Key("unique_stop_count"s).Value(bus_stat->unique_stop_count)
+                            .EndDict().Build().AsDict();
     } else {
-        answer.insert(pair<string, string>("error_message"s, "not found"s));
+        return json::Builder{}.StartDict()
+                            .Key("request_id"s).Value(req_id)
+                            .Key("error_message"s).Value("not found"s)
+                            .EndDict().Build().AsDict();
     }
 }
 
@@ -117,33 +133,32 @@ void JsonReader::ExecQueries(){
     using namespace std;
     using namespace json;
 
-    const auto& stat_reqs_it = root_node_.AsMap().find("stat_requests"s);
-    if(stat_reqs_it == root_node_.AsMap().end()) return;
+    const auto& stat_reqs_it = root_node_.AsDict().find("stat_requests"s);
+    if(stat_reqs_it == root_node_.AsDict().end()) return;
     auto& stat_reqs = stat_reqs_it->second.AsArray();
 
     Array answers{};
     for(auto& reqs : stat_reqs) {
-        auto& req = reqs.AsMap();
-        Dict answer;
-        answer.insert(pair<string, int>("request_id"s, req.at("id"s).AsInt()));
 
-        if(req.at("type"s) == "Stop"s) {
-            ExecQueryStop(req.at("name"s).AsString(), answer);
+        string type = reqs.AsDict().at("type"s).AsString();
+        int req_id = reqs.AsDict().at("id"s).AsInt();
+
+        if(type == "Stop"s) {
+            answers.push_back(ExecQueryStop(reqs.AsDict().at("name"s).AsString(), req_id));
         } else
-        if(req.at("type"s) == "Bus"s) {
-            ExecQueryBus(req.at("name"s).AsString(), answer);
+        if(type == "Bus"s) {
+            answers.push_back(ExecQueryBus(reqs.AsDict().at("name"s).AsString(), req_id));
         } else
-        if(req.at("type"s) == "Map"s) {
-            answer.insert(pair<string, string>("map"s, RenderMap()));
+        if(type == "Map"s) {
+            answers.push_back(Builder{}.StartDict()
+                              .Key("request_id"s).Value(req_id)
+                              .Key("map"s).Value(RenderMap())
+                              .EndDict().Build().AsDict());
         }
-        answers.push_back(answer);
+
     }
 
-    Node node_answers{answers};
-    std::stringstream strm;
-    PrintContext ctx{strm};
-    Print(json::Document{node_answers}, ctx);
-    std::cout << ctx.out.str();
+    Print(json::Document{Builder{}.Value(answers).Build()}, cout);
 }
 
 std::string JsonReader::FormatColor(const json::Node& color) const {
@@ -189,9 +204,9 @@ std::string JsonReader::RenderMap() {
     using namespace std;
     using namespace json;
 
-    const auto& render_sets_it = root_node_.AsMap().find("render_settings"s);
-    if(render_sets_it == root_node_.AsMap().end()) return ""s;
-    const auto& set = render_sets_it->second.AsMap();
+    const auto& render_sets_it = root_node_.AsDict().find("render_settings"s);
+    if(render_sets_it == root_node_.AsDict().end()) return ""s;
+    const auto& set = render_sets_it->second.AsDict();
 
     render_rettings_.width = set.at("width"s).AsDouble();
     render_rettings_.height = set.at("height"s).AsDouble();

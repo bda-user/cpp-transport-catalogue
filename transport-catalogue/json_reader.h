@@ -19,9 +19,9 @@ public:
 
     void FillDataBase();
 
-    void ExecQueryStop(std:: string stop_name, json::Dict& answer);
+    json::Dict ExecQueryStop(std:: string stop_name, int req_id);
 
-    void ExecQueryBus(std:: string bus_name, json::Dict& answer);
+    json::Dict ExecQueryBus(std:: string bus_name, int req_id);
 
     void ExecQueries();
 
