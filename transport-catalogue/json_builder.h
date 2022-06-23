@@ -6,7 +6,13 @@
 
 namespace json {
 
-enum State {START, ARRAY, DICT, KEY, FINAL};
+enum class State {
+    START,
+    ARRAY,
+    DICT,
+    KEY,
+    FINAL
+};
 
 class DictContext;
 class KeyContext;
@@ -17,7 +23,9 @@ class ArrayValueContext;
 class Builder {
 
 public:
+    State GetState();
     Node GetNode(Node::Value);
+    void AddNode(Node, int type);
     Builder& Value(Node::Value);
     Node Build();
     ArrayContext StartArray();
@@ -29,8 +37,6 @@ public:
 private:
     Node root_ = nullptr;
     std::vector<Node*> nodes_stack_;
-    std::vector<State> state_{State::START};
-    std::string key_;
 };
 
 class Context {

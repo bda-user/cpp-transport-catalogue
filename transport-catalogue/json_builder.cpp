@@ -4,169 +4,154 @@ using namespace std::literals;
 
 namespace json {
 
+// "enum" VS "enum class" for auto conversion to INT
+enum ValueType {
+    VALUE,
+    ARRAY,
+    DICT,
+    BOOL,
+    INT,
+    DOUBLE,
+    STRING
+};
+
+Node Builder::GetNode(Node::Value val) {
+    using namespace std;
+
+    switch (val.index()) {
+    case ValueType::ARRAY:
+        return Node{get<Array>(val)};
+    case ValueType::DICT:
+        return Node{get<Dict>(val)};
+    case ValueType::BOOL:
+        return Node{get<bool>(val)};
+    case ValueType::INT:
+        return Node{get<int>(val)};
+    case ValueType::DOUBLE:
+        return Node{get<double>(val)};
+    case ValueType::STRING:
+        return Node{get<std::string>(val)};
+    }
+    return Node{};
+}
+
+State Builder::GetState() {
+    if(root_ == nullptr) {
+        return State::START;
+    } else
+    if(nodes_stack_.empty()){
+        return State::FINAL;
+    } else
+    if(nodes_stack_.back()->IsArray()) {
+        return State::ARRAY;
+    } else
+    if(nodes_stack_.back()->IsDict()) {
+        return State::DICT;
+    }
+
+    return State::KEY;
+}
+
 Node Builder::Build() {
-    if(state_.size() > 0 && state_.back() != State::FINAL) {
-        throw std::logic_error{"Build()"};
+
+    if(State::FINAL != GetState()) {
+        throw std::logic_error{"json::Builder::Build()"};
     }
 
     return root_;
 }
 
-Node Builder::GetNode(Node::Value val) {
-    switch (val.index()) {
-    case 1:
-        return Node{std::get<Array>(val)}; break;
-    case 2:
-        return Node{std::get<Dict>(val)}; break;
-    case 3:
-        return Node{std::get<bool>(val)}; break;
-    case 4:
-        return Node{std::get<int>(val)}; break;
-    case 5:
-        return Node{std::get<double>(val)}; break;
-    case 6:
-        return Node{std::get<std::string>(val)}; break;
+Builder& Builder::EndArray() {
+
+    if(State::ARRAY != GetState()) {
+        throw std::logic_error{"json::Builder::EndArray()"};
     }
-    return Node{};
+
+    nodes_stack_.pop_back();
+
+    return *this;
 }
 
-Builder& Builder::Value(Node::Value val) {
-    Node n{GetNode(val)};
+Builder& Builder::EndDict() {
 
-    switch (state_.back()) {
+    if(State::DICT != GetState()) {
+        throw std::logic_error{"json::Builder::EndDict()"};
+    }
+
+    nodes_stack_.pop_back();
+
+    return *this;
+}
+
+KeyContext Builder::Key(Node::Value val) {
+
+    if(State::DICT != GetState()) {
+        throw std::logic_error{"json::Builder::Key()"};
+    }
+
+    auto key = std::get<std::string>(val);
+    nodes_stack_.back()->AsDict()[key] = Node{key};
+    nodes_stack_.push_back(&nodes_stack_.back()->AsDict().at(key));
+
+    return KeyContext{*this};
+}
+
+void Builder::AddNode(Node node, int type) {
+
+    switch (GetState()) {
     case State::START: {
-        state_.pop_back();
-        state_.push_back(State::FINAL);
-        root_ = move(n);
+        root_ = move(node);
+        if(type != ValueType::VALUE) {
+            nodes_stack_.push_back(&root_);
+        }
         break;
     }
     case State::ARRAY: {
-        auto& a = nodes_stack_.back()->AsArray();
-        a.push_back(move(n));
+        nodes_stack_.back()->AsArray().push_back(move(node));
+        if(type != ValueType::VALUE) {
+            nodes_stack_.push_back(&nodes_stack_.back()->AsArray().back());
+        }
         break;
     }
     case State::KEY: {
-        state_.pop_back();
-        nodes_stack_.back()->AsDict()[key_] = move(n);
+        auto key = nodes_stack_.back()->AsString();
+        nodes_stack_.pop_back();
+        nodes_stack_.back()->AsDict().at(key) = move(node);
+        if(type != ValueType::VALUE) {
+            nodes_stack_.push_back(&nodes_stack_.back()->AsDict().at(key));
+        }
         break;
     }
     default:
-        throw std::logic_error{"Value()"s};
+        std::string what = "json::Builder::"s + (
+                type != ValueType::ARRAY ? "StartArray()"s :
+                type != ValueType::DICT ?  "StartDict()"s :
+                                 "Value()"s);
+        throw std::logic_error{what};
     }
+
+    return;
+}
+
+Builder& Builder::Value(Node::Value val) {
+
+    AddNode(Node{GetNode(val)}, ValueType::VALUE);
 
     return *this;
 }
 
 ArrayContext Builder::StartArray(){
-    Node na{Array{}};
 
-    switch (state_.back()) {
-    case State::START: {
-        state_.pop_back();
-        root_ = move(na);
-        nodes_stack_.push_back(&root_);
-        break;
-    }
-    case State::ARRAY: {
-        auto& a = nodes_stack_.back()->AsArray();
-        a.push_back(move(na));
-        nodes_stack_.push_back(&a.back());
-        break;
-    }
-    case State::KEY: {
-        state_.pop_back();        
-        nodes_stack_.back()->AsDict()[key_] = move(na);
-        nodes_stack_.push_back(&nodes_stack_.back()->AsDict().at(key_));
-        break;
-    }
-    default:
-        throw std::logic_error{"StartArray()"s};
-    }
-
-    state_.push_back(State::ARRAY);
+    AddNode(Node{Array{}}, ValueType::ARRAY);
 
     return ArrayContext{*this};
 }
 
-Builder& Builder::EndArray() {
-
-    switch (state_.back()) {
-    case State::ARRAY: {
-        state_.pop_back();
-        nodes_stack_.pop_back();
-        break;
-    }
-    default:
-        throw std::logic_error{"EndArray()"s};
-    }
-
-    return *this;
-
-}
-
-KeyContext Builder::Key(Node::Value val) {
-
-    switch (state_.back()) {
-    case State::DICT: {
-        key_ = std::get<std::string>(val);
-        state_.push_back(State::KEY);
-        break;
-    }
-    default:
-        throw std::logic_error{"Key()"s};
-    }
-
-    return KeyContext{*this};
-
-}
-
 DictContext Builder::StartDict(){
 
-    Node nd{Dict{}};
-
-    switch (state_.back()) {
-    case State::START: {
-        state_.pop_back();
-        root_ = move(nd);
-        nodes_stack_.push_back(&root_);
-        break;
-    }
-    case State::ARRAY: {
-        auto& a = nodes_stack_.back()->AsArray();
-        a.push_back(move(nd));
-        nodes_stack_.push_back(&a.back());
-        break;
-    }
-    case State::KEY: {
-        state_.pop_back();
-        nodes_stack_.back()->AsDict()[key_] = move(nd);
-        nodes_stack_.push_back(&nodes_stack_.back()->AsDict().at(key_));
-        break;
-    }
-    default:
-        throw std::logic_error{"StartDict()"s};
-    }
-
-    state_.push_back(State::DICT);
+    AddNode(Node{Dict{}}, ValueType::DICT);
 
     return DictContext(*this);
-
-}
-
-Builder& Builder::EndDict() {
-
-    switch (state_.back()) {
-    case State::DICT: {
-        state_.pop_back();
-        nodes_stack_.pop_back();
-        break;
-    }
-    default:
-        throw std::logic_error{"EndDict()"s};
-    }
-
-    return *this;
-
 }
 
 // class Context
