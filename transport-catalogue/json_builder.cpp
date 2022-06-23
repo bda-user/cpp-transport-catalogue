@@ -124,8 +124,8 @@ void Builder::AddNode(Node node, int type) {
     }
     default:
         std::string what = "json::Builder::"s + (
-                type != ValueType::ARRAY ? "StartArray()"s :
-                type != ValueType::DICT ?  "StartDict()"s :
+                type == ValueType::ARRAY ? "StartArray()"s :
+                type == ValueType::DICT ?  "StartDict()"s :
                                  "Value()"s);
         throw std::logic_error{what};
     }
