@@ -51,14 +51,14 @@ BusInfo TransportCatalogue::GetBusInfo(std::string_view bus_name)  const {
     }
 }
 
-int TransportCatalogue::GetDistance(Stop* from, Stop* to)  const {
+double TransportCatalogue::GetDistance(Stop* from, Stop* to)  const {
     if(auto it = distances_.find({from, to}); it != distances_.end()) {
         return it->second;
     } else
     if(auto it = distances_.find({to, from}); it != distances_.end()) {
         return it->second;
     }
-    return 0;
+    return 0.0;
 }
 
 const std::unordered_map<std::string_view, Bus*>& TransportCatalogue::GetBussesIndex() const {

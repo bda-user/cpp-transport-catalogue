@@ -128,4 +128,12 @@ svg::Document RequestHandler::RenderMap(const renderer::RenderSettings& render_s
     return renderer_.RenderMap(layers_, render_settings);
 }
 
+void RequestHandler::TuneRouter(const TransportRouter::Settings settings) {
+    router_.SetSettings(settings);
+}
+
+std::optional<TransportRouter::Route> RequestHandler::BuildRoute(std::string_view from, std::string_view to) const {
+    return router_.BuildRoute(from, to);
+}
+
 } //namespace transport

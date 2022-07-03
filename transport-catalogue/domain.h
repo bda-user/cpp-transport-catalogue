@@ -55,7 +55,7 @@ struct BusInfo {
 
 struct BusStat {
     double curvature = 0.0;
-    int route_length = 0;
+    double route_length = 0.0;
     int stop_count = 0;
     int unique_stop_count = 0;
 };

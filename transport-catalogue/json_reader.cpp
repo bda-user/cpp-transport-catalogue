@@ -137,6 +137,8 @@ void JsonReader::ExecQueries(){
     if(stat_reqs_it == root_node_.AsDict().end()) return;
     auto& stat_reqs = stat_reqs_it->second.AsArray();
 
+    const bool has_router_settings = SetRouterSettings();
+
     Array answers{};
     for(auto& reqs : stat_reqs) {
 
@@ -154,6 +156,11 @@ void JsonReader::ExecQueries(){
                               .Key("request_id"s).Value(req_id)
                               .Key("map"s).Value(RenderMap())
                               .EndDict().Build().AsDict());
+        } else
+        if(type == "Route"s && has_router_settings) {
+            answers.push_back(ExecQueryRoute(reqs.AsDict().at("from"s).AsString(),
+                                             reqs.AsDict().at("to"s).AsString(),
+                                             req_id));
         }
 
     }
@@ -235,6 +242,60 @@ std::string JsonReader::RenderMap() {
     request_handler_.RenderMap(render_rettings_).Render(ss);
 
     return ss.str();
+}
+
+bool JsonReader::SetRouterSettings() {
+    const auto& router_sets_it = root_node_.AsDict().find("routing_settings"s);
+    if(router_sets_it == root_node_.AsDict().end()) return false;
+
+    const auto& set = router_sets_it->second.AsDict();
+
+    TransportRouter::Settings settings;
+    settings.velocity = set.at("bus_velocity"s).AsDouble();
+    settings.wait = set.at("bus_wait_time"s).AsDouble();
+    request_handler_.TuneRouter(settings);
+    return true;
+}
+
+json::Node JsonReader::GetNodeValue(TransportRouter::ItemValue value) {
+    using namespace json;
+    if(std::holds_alternative<double>(value))
+        return Node(std::get<double>(value));
+    else
+    if(std::holds_alternative<int>(value))
+        return Node(std::get<int>(value));
+    else
+        return Node(std::get<std::string>(value));
+}
+
+json::Dict JsonReader::ExecQueryRoute(std:: string from, std:: string to, int req_id){
+
+    using namespace json;
+
+    auto route = request_handler_.BuildRoute(from, to);
+    if(route == std::nullopt) {
+        return Builder{}.StartDict()
+            .Key("request_id"s).Value(req_id)
+            .Key("error_message"s).Value("not found"s)
+        .EndDict().Build().AsDict();
+    }
+
+    Array items{};
+    for(auto& item : route->items) {
+        Dict dict{};
+        for(auto& [key, value] : item) {
+            Node node;
+            dict.insert({key, GetNodeValue(value)});
+        }
+        items.push_back(std::move(dict));
+    }
+
+    return json::Builder{}
+                        .StartDict()
+                            .Key("items"s).Value(items)
+                            .Key("request_id"s).Value(req_id)
+                            .Key("total_time"s).Value(route->total_time)
+                        .EndDict().Build().AsDict();
 }
 
 } //namespace transport

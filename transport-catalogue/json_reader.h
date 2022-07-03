@@ -31,6 +31,12 @@ public:
 
     std::string RenderMap();
 
+    bool SetRouterSettings();
+
+    json::Node GetNodeValue(TransportRouter::ItemValue value);
+
+    json::Dict ExecQueryRoute(std:: string from, std:: string to, int req_id);
+
 private:
     TransportCatalogue& catalogue_;
     json::Node root_node_;
