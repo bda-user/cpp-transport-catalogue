@@ -4,18 +4,17 @@
 
 namespace transport {
 
-void TransportRouter::SetSettings(Settings settings) {
-    wait_ = settings.wait;
-    velocity_ = settings.velocity;
+void TransportRouter::Init(Settings settings) {
+
+    settings_ = settings;
 
     size_t i = 0;
     const auto& stops = catalog_.GetStops();
 
     // add stop shadow f.e. "Universam" -> "Universam_#_"
-    for(Stop stop : stops) {
-        std::string stop_suff = stop.name + STOP_SUFFIX;
-        stops_.insert({std::move(stop.name), i++});
-        stops_.insert({std::move(stop_suff), i++});
+    for(const Stop& stop : stops) {
+        stops_.insert({stop.name, i++});
+        stops_.insert({stop.name + STOP_SUFFIX, i++});
     }
 
     graph_ = new graph::DirectedWeightedGraph<double>(2 * catalog_.GetStops().size());
@@ -31,8 +30,8 @@ void TransportRouter::AddEdges(EdgeIdx edge_idx, std::vector<double>& span_time)
     // 1) add edge for stop -> shadow
     // f.e. (enter)"Universam" (wait bus)-> (leave)"Universam_#_"
     // A - B - C here A - A_#_
-    graph_->AddEdge({from, from_suff, wait_});
-    edges_.push_back({edge_idx.bus, edge_idx.from, edge_idx.from, wait_, 0});
+    graph_->AddEdge({from, from_suff, settings_.wait});
+    edges_.push_back({edge_idx.bus, edge_idx.from, edge_idx.from, settings_.wait, 0});
 
     // 2) add edge (span etc.) for each bus stops pair
     // A - B - C here A_#_ - B
@@ -71,7 +70,7 @@ void TransportRouter::FillGraph() {
             }
 
             double dist = catalog_.GetDistance(from, to);
-            double time = 60.0 * dist / 1000 / velocity_;
+            double time = 60.0 * dist / 1000 / settings_.velocity;
 
             /*
              * for AddEdges() p. 3)

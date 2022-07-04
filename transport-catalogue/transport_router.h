@@ -36,7 +36,7 @@ public:
 
     TransportRouter(TransportCatalogue& catalog) : catalog_(catalog) {}
 
-    void SetSettings(Settings);
+    void Init(Settings);
 
     std::optional<Route> BuildRoute(std::string_view from, std::string_view to) const;
 
@@ -57,8 +57,7 @@ private:
     void AddEdges(EdgeIdx, std::vector<double>&);
 
     const TransportCatalogue& catalog_;
-    double wait_ = 0.0;
-    double velocity_ = 0.0;
+    Settings settings_{0.0, 0.0};
     graph::DirectedWeightedGraph<double>* graph_;
     graph::Router<double>* router_;
     std::unordered_map<std::string, size_t> stops_;

@@ -31,7 +31,7 @@ public:
 
     svg::Document RenderMap(const renderer::RenderSettings& render_rettings);
 
-    void TuneRouter(const TransportRouter::Settings settings);
+    void InitRouter(const TransportRouter::Settings settings);
 
     std::optional<TransportRouter::Route> BuildRoute(std::string_view from, std::string_view to) const;
 

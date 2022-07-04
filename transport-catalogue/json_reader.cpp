@@ -253,7 +253,7 @@ bool JsonReader::SetRouterSettings() {
     TransportRouter::Settings settings;
     settings.velocity = set.at("bus_velocity"s).AsDouble();
     settings.wait = set.at("bus_wait_time"s).AsDouble();
-    request_handler_.TuneRouter(settings);
+    request_handler_.InitRouter(settings);
     return true;
 }
 
