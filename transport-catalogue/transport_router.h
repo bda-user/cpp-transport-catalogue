@@ -3,6 +3,7 @@
 #include "geo.h"
 #include "router.h"
 #include "transport_catalogue.h"
+#include "serialization.h"
 
 #include <vector>
 #include <unordered_set>
@@ -14,7 +15,11 @@ using namespace std::literals;
 
 namespace transport {
 
+class TransportCatalogue;
+
 class TransportRouter {
+
+    friend class Serial;
 
 const std::string STOP_SUFFIX = "_#_"s;
 
@@ -40,7 +45,10 @@ public:
 
     std::optional<Route> BuildRoute(std::string_view from, std::string_view to) const;
 
-    ~TransportRouter() { delete graph_; delete router_; }
+    ~TransportRouter() {
+        if(graph_ != nullptr) delete graph_;
+        if(router_ != nullptr) delete router_;
+    }
 
 private:
 
@@ -58,8 +66,8 @@ private:
 
     const TransportCatalogue& catalog_;
     Settings settings_{0.0, 0.0};
-    graph::DirectedWeightedGraph<double>* graph_;
-    graph::Router<double>* router_;
+    graph::DirectedWeightedGraph<double>* graph_ = nullptr;
+    graph::Router<double>* router_ = nullptr;
     std::unordered_map<std::string, size_t> stops_;
     std::vector<EdgeIdx> edges_;
 };

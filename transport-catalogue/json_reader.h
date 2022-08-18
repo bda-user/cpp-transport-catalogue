@@ -19,6 +19,10 @@ public:
 
     void FillDataBase();
 
+    void BaseSave(transport::TransportRouter&);
+
+    void BaseLoad(transport::TransportRouter&);
+
     json::Dict ExecQueryStop(std:: string stop_name, int req_id);
 
     json::Dict ExecQueryBus(std:: string bus_name, int req_id);
@@ -28,6 +32,8 @@ public:
     std::string FormatColor(const json::Node& color) const;
 
     void FillColorPalette(const json::Node& color_palette, std::vector<std::string>& vec_color);
+
+    bool SetRenderSettings();
 
     std::string RenderMap();
 

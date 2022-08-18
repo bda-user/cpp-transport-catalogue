@@ -1,116 +1,204 @@
 #include <iostream>
 #include <sstream>
+#include <fstream>
+#include <iostream>
+#include <string_view>
 
 #include "json_reader.h"
 #include "request_handler.h"
 #include "map_renderer.h"
 #include "transport_router.h"
 
-//#define ISSTR ;
+#define ISSTR ;
 
 using namespace std::literals;
 
-int main()
-{
+void PrintUsage(std::ostream& stream = std::cerr) {
+    stream << "Usage: transport_catalogue [make_base|process_requests]\n"sv;
+}
+
+int main(int argc, char* argv[]) {
 
 #ifdef ISSTR
 
     std::istringstream sin{
 "{"
+"    \"serialization_settings\": {"
+"        \"file\": \"transport_catalogue.db\""
+"    },"
+"    \"routing_settings\": {"
+"        \"bus_wait_time\": 2,"
+"        \"bus_velocity\": 30"
+"    },"
+"    \"render_settings\": {"
+"        \"width\": 1200,"
+"        \"height\": 500,"
+"        \"padding\": 50,"
+"        \"stop_radius\": 5,"
+"        \"line_width\": 14,"
+"        \"bus_label_font_size\": 20,"
+"        \"bus_label_offset\": ["
+"            7,"
+"            15"
+"        ],"
+"        \"stop_label_font_size\": 18,"
+"        \"stop_label_offset\": ["
+"            7,"
+"            -3"
+"        ],"
+"        \"underlayer_color\": ["
+"            255,"
+"            255,"
+"            255,"
+"            0.85"
+"        ],"
+"        \"underlayer_width\": 3,"
+"        \"color_palette\": ["
+"            \"green\","
+"            ["
+"                255,"
+"                160,"
+"                0"
+"            ],"
+"            \"red\""
+"        ]"
+"    },"
 "    \"base_requests\": ["
 "        {"
-"            \"is_roundtrip\": true,"
-"            \"name\": \"297\","
+"            \"type\": \"Bus\","
+"            \"name\": \"14\","
 "            \"stops\": ["
-"                \"Biryulyovo Zapadnoye\","
-"                \"Biryulyovo Tovarnaya\","
-"                \"Universam\","
-"                \"Biryulyovo Zapadnoye\""
+"                \"Улица Лизы Чайкиной\","
+"                \"Электросети\","
+"                \"Ривьерский мост\","
+"                \"Гостиница Сочи\","
+"                \"Кубанская улица\","
+"                \"По требованию\","
+"                \"Улица Докучаева\","
+"                \"Улица Лизы Чайкиной\""
 "            ],"
-"            \"type\": \"Bus\""
+"            \"is_roundtrip\": true"
 "        },"
 "        {"
-"            \"is_roundtrip\": false,"
-"            \"name\": \"635\","
+"            \"type\": \"Bus\","
+"            \"name\": \"24\","
 "            \"stops\": ["
-"                \"Biryulyovo Tovarnaya\","
-"                \"Universam\","
-"                \"Prazhskaya\""
+"                \"Улица Докучаева\","
+"                \"Параллельная улица\","
+"                \"Электросети\","
+"                \"Санаторий Родина\""
 "            ],"
-"            \"type\": \"Bus\""
+"            \"is_roundtrip\": false"
 "        },"
 "        {"
-"            \"latitude\": 55.574371,"
-"            \"longitude\": 37.6517,"
-"            \"name\": \"Biryulyovo Zapadnoye\","
+"            \"type\": \"Bus\","
+"            \"name\": \"114\","
+"            \"stops\": ["
+"                \"Морской вокзал\","
+"                \"Ривьерский мост\""
+"            ],"
+"            \"is_roundtrip\": false"
+"        },"
+"        {"
+"            \"type\": \"Stop\","
+"            \"name\": \"Улица Лизы Чайкиной\","
+"            \"latitude\": 43.590317,"
+"            \"longitude\": 39.746833,"
 "            \"road_distances\": {"
-"                \"Biryulyovo Tovarnaya\": 2600"
-"            },"
-"            \"type\": \"Stop\""
+"                \"Электросети\": 4300,"
+"                \"Улица Докучаева\": 2000"
+"            }"
 "        },"
 "        {"
-"            \"latitude\": 55.587655,"
-"            \"longitude\": 37.645687,"
-"            \"name\": \"Universam\","
+"            \"type\": \"Stop\","
+"            \"name\": \"Морской вокзал\","
+"            \"latitude\": 43.581969,"
+"            \"longitude\": 39.719848,"
 "            \"road_distances\": {"
-"                \"Biryulyovo Tovarnaya\": 1380,"
-"                \"Biryulyovo Zapadnoye\": 2500,"
-"                \"Prazhskaya\": 4650"
-"            },"
-"            \"type\": \"Stop\""
+"                \"Ривьерский мост\": 850"
+"            }"
 "        },"
 "        {"
-"            \"latitude\": 55.592028,"
-"            \"longitude\": 37.653656,"
-"            \"name\": \"Biryulyovo Tovarnaya\","
+"            \"type\": \"Stop\","
+"            \"name\": \"Электросети\","
+"            \"latitude\": 43.598701,"
+"            \"longitude\": 39.730623,"
 "            \"road_distances\": {"
-"                \"Universam\": 890"
-"            },"
-"            \"type\": \"Stop\""
+"                \"Санаторий Родина\": 4500,"
+"                \"Параллельная улица\": 1200,"
+"                \"Ривьерский мост\": 1900"
+"            }"
 "        },"
 "        {"
-"            \"latitude\": 55.611717,"
-"            \"longitude\": 37.603938,"
-"            \"name\": \"Prazhskaya\","
-"            \"road_distances\": {},"
-"            \"type\": \"Stop\""
+"            \"type\": \"Stop\","
+"            \"name\": \"Ривьерский мост\","
+"            \"latitude\": 43.587795,"
+"            \"longitude\": 39.716901,"
+"            \"road_distances\": {"
+"                \"Морской вокзал\": 850,"
+"                \"Гостиница Сочи\": 1740"
+"            }"
+"        },"
+"        {"
+"            \"type\": \"Stop\","
+"            \"name\": \"Гостиница Сочи\","
+"            \"latitude\": 43.578079,"
+"            \"longitude\": 39.728068,"
+"            \"road_distances\": {"
+"                \"Кубанская улица\": 320"
+"            }"
+"        },"
+"        {"
+"            \"type\": \"Stop\","
+"            \"name\": \"Кубанская улица\","
+"            \"latitude\": 43.578509,"
+"            \"longitude\": 39.730959,"
+"            \"road_distances\": {"
+"                \"По требованию\": 370"
+"            }"
+"        },"
+"        {"
+"            \"type\": \"Stop\","
+"            \"name\": \"По требованию\","
+"            \"latitude\": 43.579285,"
+"            \"longitude\": 39.733742,"
+"            \"road_distances\": {"
+"                \"Улица Докучаева\": 600"
+"            }"
+"        },"
+"        {"
+"            \"type\": \"Stop\","
+"            \"name\": \"Улица Докучаева\","
+"            \"latitude\": 43.585586,"
+"            \"longitude\": 39.733879,"
+"            \"road_distances\": {"
+"                \"Параллельная улица\": 1100"
+"            }"
+"        },"
+"        {"
+"            \"type\": \"Stop\","
+"            \"name\": \"Параллельная улица\","
+"            \"latitude\": 43.590041,"
+"            \"longitude\": 39.732886,"
+"            \"road_distances\": {}"
+"        },"
+"        {"
+"            \"type\": \"Stop\","
+"            \"name\": \"Санаторий Родина\","
+"            \"latitude\": 43.601202,"
+"            \"longitude\": 39.715498,"
+"            \"road_distances\": {}"
 "        }"
 "    ],"
-"    \"routing_settings\": {"
-"        \"bus_velocity\": 40,"
-"        \"bus_wait_time\": 6"
-"    },"
 "    \"stat_requests\": ["
 "        {"
-"            \"id\": 1,"
-"            \"name\": \"297\","
-"            \"type\": \"Bus\""
-"        },"
-"        {"
-"            \"id\": 2,"
-"            \"name\": \"635\","
-"            \"type\": \"Bus\""
-"        },"
-"        {"
-"            \"id\": 3,"
-"            \"name\": \"Universam\","
-"            \"type\": \"Stop\""
-"        },"
-"        {"
-"            \"from\": \"Biryulyovo Zapadnoye\","
-"            \"id\": 4,"
-"            \"to\": \"Universam\","
-"            \"type\": \"Route\""
-"        },"
-"        {"
-"            \"from\": \"Biryulyovo Zapadnoye\","
-"            \"id\": 5,"
-"            \"to\": \"Prazhskaya\","
-"            \"type\": \"Route\""
+"            \"id\": 1964680131,"
+"            \"type\": \"Route\","
+"            \"from\": \"Морской вокзал\","
+"            \"to\": \"Параллельная улица\""
 "        }"
 "    ]"
-"}"
-""s
+"}"s
 };
 
 #endif
@@ -126,8 +214,36 @@ int main()
     transport::JsonReader jreader(catalogue, json::Load(std::cin).GetRoot(), request_handler);
 #endif
 
-    jreader.FillDataBase();
-    jreader.ExecQueries();
+    if (argc != 2) {
+//        PrintUsage();
+//        return 1;
+    }
+
+//    const std::string_view mode(argv[1]);
+//    const std::string_view mode("make_base"sv);
+    const std::string_view mode("process_requests"sv);
+
+    if (mode == "make_base"sv) {
+
+        // make base here
+
+        jreader.FillDataBase();
+        jreader.BaseSave(router);
+//        jreader.ExecQueries();
+//        jreader.BaseLoad(router);
+//        jreader.ExecQueries();
+
+    } else if (mode == "process_requests"sv) {
+
+        // process requests here
+
+        jreader.BaseLoad(router);
+        jreader.ExecQueries();
+
+    } else {
+        PrintUsage();
+        return 1;
+    }
 
     return 0;
 }

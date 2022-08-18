@@ -11,6 +11,7 @@ namespace transport {
 struct Stop {
     std::string name{""};
     geo::Coordinates coordinates{0, 0};
+    int id = 0;  // for serializacii / desrializacii
 };
 
 struct StopsPtr {
@@ -40,6 +41,7 @@ struct Bus {
     std::string name{""};
     std::deque<Stop*> stops{};
     Stop* last_stop{nullptr};
+    int id = 0; // for serializacii / desrializacii
 };
 
 struct StopInfo {

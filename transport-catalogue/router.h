@@ -12,10 +12,17 @@
 #include <utility>
 #include <vector>
 
+namespace transport {
+    struct Serial;
+}
+
 namespace graph {
 
 template <typename Weight>
 class Router {
+
+    friend class transport::Serial;
+
 private:
     using Graph = DirectedWeightedGraph<Weight>;
 

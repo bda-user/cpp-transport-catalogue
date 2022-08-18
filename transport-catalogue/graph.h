@@ -1,9 +1,14 @@
 #pragma once
 
 #include "ranges.h"
+#include "serialization.h"
 
 #include <cstdlib>
 #include <vector>
+
+namespace transport {
+    struct Serial;
+}
 
 namespace graph {
 
@@ -19,6 +24,9 @@ struct Edge {
 
 template <typename Weight>
 class DirectedWeightedGraph {
+
+    friend class transport::Serial;
+
 private:
     using IncidenceList = std::vector<EdgeId>;
     using IncidentEdgesRange = ranges::Range<typename IncidenceList::const_iterator>;

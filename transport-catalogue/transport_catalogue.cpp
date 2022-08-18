@@ -4,10 +4,11 @@
 
 namespace transport {
 
-void TransportCatalogue::AddStop(std::string_view name, const geo::Coordinates coords){
-    stops_.push_back({std::string(name), coords});
+Stop* TransportCatalogue::AddStop(std::string_view name, const geo::Coordinates coords){
+    stops_.push_back({std::string(name), coords, (int)stops_.size()});
     auto& last_stop = stops_.back();
     stops_indx_.insert({last_stop.name, &last_stop});
+    return &last_stop;
 }
 
 const Stop* TransportCatalogue::FindStop(std::string_view name) {
@@ -17,17 +18,19 @@ const Stop* TransportCatalogue::FindStop(std::string_view name) {
     return nullptr;
 }
 
-void TransportCatalogue::SetDistance(const Stop* from, const Stop* to, int distance) {
+void TransportCatalogue::SetDistance(const Stop* from, const Stop* to, double distance) {
     distances_.insert({{const_cast<Stop*>(from), const_cast<Stop*>(to)}, distance});
 }
 
-void TransportCatalogue::AddBus(std::string_view name, std::deque<Stop*>&& stops, Stop* last_stop) {
-    buses_.push_back({std::string(name), std::move(stops), last_stop});
+Bus* TransportCatalogue::AddBus(std::string_view name, std::deque<Stop*>&& stops, Stop* last_stop) {
+    buses_.push_back({std::string(name), std::move(stops),
+                      last_stop, (int)buses_.size()});
     auto& last_bus = buses_.back();
     buses_indx_.insert({last_bus.name, &last_bus});
     for(auto& stop : last_bus.stops) {
         stops_buses_indx_[stop].insert(&last_bus);
     }
+    return &last_bus;
 }
 
 StopInfo TransportCatalogue::GetStopInfo(std::string_view stop_name) const {

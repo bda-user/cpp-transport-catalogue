@@ -5,6 +5,7 @@
 
 #include "json_reader.h"
 #include "json_builder.h"
+#include "serialization.h"
 
 namespace transport {
 
@@ -31,7 +32,7 @@ void JsonReader::FillDataBaseStops(const json::Array& base_reqs) {
         for(auto& [stop, distance] : distances_it->second.AsDict()){
             auto to = catalogue_.FindStop(stop);
             if(to != nullptr) {
-                catalogue_.SetDistance(from, to, distance.AsInt());
+                catalogue_.SetDistance(from, to, distance.AsDouble());
             }
         }
     }
@@ -46,9 +47,9 @@ void JsonReader::FillDataBaseBuses(const json::Array& base_reqs) {
         // no stops
         if(req.find("stops"s) != req.end()) {
             for(auto& stop : req.at("stops"s).AsArray()) {
-                auto stop_name = catalogue_.FindStop(stop.AsString());
-                if(stop_name != nullptr) {
-                    bus_stops.push_back(const_cast<Stop*>(stop_name));
+                auto stop_ptr = catalogue_.FindStop(stop.AsString());
+                if(stop_ptr != nullptr) {
+                    bus_stops.push_back(const_cast<Stop*>(stop_ptr));
                 }
             }
         }
@@ -76,6 +77,24 @@ void JsonReader::FillDataBase() {
     FillDataBaseBuses(base_reqs);
 
     return;
+}
+
+void JsonReader::BaseSave(transport::TransportRouter& router_) {
+    const auto& serial_sets_it = root_node_.AsDict().find("serialization_settings"s);
+    if(serial_sets_it == root_node_.AsDict().end()) return;
+    auto& serial_sets = serial_sets_it->second.AsDict();
+    auto& fname = serial_sets["file"s].AsString();
+    SetRenderSettings();
+    SetRouterSettings();
+    transport::Serial::BaseSave(fname, catalogue_, render_rettings_, router_);
+}
+
+void JsonReader::BaseLoad(transport::TransportRouter& router_) {
+    const auto& serial_sets_it = root_node_.AsDict().find("serialization_settings"s);
+    if(serial_sets_it == root_node_.AsDict().end()) return;
+    auto& serial_sets = serial_sets_it->second.AsDict();
+    auto& fname = serial_sets["file"s].AsString();
+    transport::Serial::BaseLoad(fname, catalogue_, render_rettings_, router_);
 }
 
 json::Dict JsonReader::ExecQueryStop(std:: string stop_name, int req_id){
@@ -137,7 +156,7 @@ void JsonReader::ExecQueries(){
     if(stat_reqs_it == root_node_.AsDict().end()) return;
     auto& stat_reqs = stat_reqs_it->second.AsArray();
 
-    const bool has_router_settings = SetRouterSettings();
+//    const bool has_router_settings = SetRouterSettings();
 
     Array answers{};
     for(auto& reqs : stat_reqs) {
@@ -157,7 +176,7 @@ void JsonReader::ExecQueries(){
                               .Key("map"s).Value(RenderMap())
                               .EndDict().Build().AsDict());
         } else
-        if(type == "Route"s && has_router_settings) {
+        if(type == "Route"s) {
             answers.push_back(ExecQueryRoute(reqs.AsDict().at("from"s).AsString(),
                                              reqs.AsDict().at("to"s).AsString(),
                                              req_id));
@@ -207,12 +226,12 @@ void JsonReader::FillColorPalette(const json::Node& color_palette, std::vector<s
     }
 }
 
-std::string JsonReader::RenderMap() {
+bool JsonReader::SetRenderSettings() {
     using namespace std;
     using namespace json;
 
     const auto& render_sets_it = root_node_.AsDict().find("render_settings"s);
-    if(render_sets_it == root_node_.AsDict().end()) return ""s;
+    if(render_sets_it == root_node_.AsDict().end()) return false;
     const auto& set = render_sets_it->second.AsDict();
 
     render_rettings_.width = set.at("width"s).AsDouble();
@@ -237,6 +256,14 @@ std::string JsonReader::RenderMap() {
     FillColorPalette(set.at("color_palette"s), color_palette);
 
     render_rettings_.stroke_color = move(color_palette);
+    return true;
+}
+
+std::string JsonReader::RenderMap() {
+    using namespace std;
+    using namespace json;
+
+    SetRenderSettings();
 
     std::ostringstream ss;
     request_handler_.RenderMap(render_rettings_).Render(ss);
