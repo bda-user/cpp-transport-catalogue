@@ -17,9 +17,9 @@ void TransportRouter::Init(Settings settings) {
         stops_.insert({stop.name + STOP_SUFFIX, i++});
     }
 
-    graph_ = new graph::DirectedWeightedGraph<double>(2 * catalog_.GetStops().size());
+    graph_ = std::make_unique<graph::DirectedWeightedGraph<double>>(2 * catalog_.GetStops().size());
     FillGraph();
-    router_ = new graph::Router<double>(*graph_);
+    router_ = std::make_unique<graph::Router<double>>(*graph_);
 }
 
 void TransportRouter::AddEdges(EdgeIdx edge_idx, std::vector<double>& span_time) {

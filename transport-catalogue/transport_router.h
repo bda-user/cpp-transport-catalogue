@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <variant>
 #include <optional>
+#include <memory>
 
 using namespace std::literals;
 
@@ -45,11 +46,6 @@ public:
 
     std::optional<Route> BuildRoute(std::string_view from, std::string_view to) const;
 
-    ~TransportRouter() {
-        if(graph_ != nullptr) delete graph_;
-        if(router_ != nullptr) delete router_;
-    }
-
 private:
 
     struct EdgeIdx {
@@ -66,8 +62,8 @@ private:
 
     const TransportCatalogue& catalog_;
     Settings settings_{0.0, 0.0};
-    graph::DirectedWeightedGraph<double>* graph_ = nullptr;
-    graph::Router<double>* router_ = nullptr;
+    std::unique_ptr<graph::DirectedWeightedGraph<double>> graph_;
+    std::unique_ptr<graph::Router<double>> router_;
     std::unordered_map<std::string, size_t> stops_;
     std::vector<EdgeIdx> edges_;
 };

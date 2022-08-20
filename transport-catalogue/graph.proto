@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package transport.serial;
+
+message GraphEdge {
+    uint32 from = 1;
+    uint32 to = 2;
+    double weight = 3;
+}
+
+message GraphIncidenceList {
+  repeated uint32 edge_ids = 1;
+}
+
+message RouteInternalData {
+    double weight = 1;
+    int32 prev_edge = 2;
+}
+
+message RoutesInternalData {
+    repeated RouteInternalData route_internal_data = 1;
+}
+
+message Graph {
+    repeated GraphEdge grath_edges = 6;
+    repeated GraphIncidenceList grath_incidence_lists = 7;
+    repeated RoutesInternalData routes_internal_data = 8;
+}

@@ -2,6 +2,10 @@ syntax = "proto3";
 
 package transport.serial;
 
+import "map_renderer.proto";
+import "transport_router.proto";
+import "graph.proto";
+
 message Stop {
     string name = 1;
     double lat = 2;
@@ -27,76 +31,16 @@ message StopBuses {
     repeated int32 buses = 2;
 }
 
-message Point {
-    double x = 1;
-    double y = 2;
-}
-
-message RenderSettings {
-    double width = 1;
-    double height = 2;
-    double padding = 3;
-    double stroke_width = 4;
-    double stop_radius = 5;
-    int32 bus_label_font_size = 6;
-    Point bus_label_offset = 7;
-    int32 stop_label_font_size = 8;
-    Point stop_label_offset = 9;
-    string underlayer_color = 10;
-    double underlayer_width = 11;
-    repeated string stroke_color = 12;
-    string fill_color = 13;
-    int32 stroke_line_join = 14;
-    int32 stroke_line_cap = 15;
-}
-
-message RouterSettings {
-    double wait = 1;
-    double velocity = 2;
-}
-
-message RouterStop {
-    string name = 1;
-    uint32 number = 2;
-}
-
-message RouterEdgeIdx {
-    int32 bus_id = 1;
-    int32 from_id = 2;
-    int32 to_id = 3;
-    double time = 4;
-    uint32 span = 5;
-}
-
-message GraphEdge {
-    uint32 from = 1;
-    uint32 to = 2;
-    double weight = 3;
-}
-
-message GraphIncidenceList {
-  repeated uint32 edge_ids = 1;
-}
-
-message RouteInternalData {
-    double weight = 1;
-    int32 prev_edge = 2;
-}
-
-message RoutesInternalData {
-    repeated RouteInternalData route_internal_data = 1;
-}
-
-message TransportCatalogue {
+message Catalogue {
     repeated Stop stops = 1;
     repeated Distance distances = 2;
     repeated Bus buses = 3;
     repeated StopBuses stop_buses = 4;
-    RenderSettings render_settings = 5;
-    RouterSettings router_settings = 6;
-    repeated RouterStop router_stops = 7;
-    repeated RouterEdgeIdx router_edge_idx = 8;
-    repeated GraphEdge grath_edges = 9;
-    repeated GraphIncidenceList grath_incidence_lists = 10;
-    repeated RoutesInternalData routes_internal_data = 11;
+}
+
+message TransportCatalogue {
+    Catalogue catalogue = 1;
+    RenderSettings render_settings = 2;
+    Router router = 3;
+    Graph graph = 4;
 }

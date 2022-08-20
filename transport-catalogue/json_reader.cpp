@@ -86,7 +86,7 @@ void JsonReader::BaseSave(transport::TransportRouter& router_) {
     auto& fname = serial_sets["file"s].AsString();
     SetRenderSettings();
     SetRouterSettings();
-    transport::Serial::BaseSave(fname, catalogue_, render_rettings_, router_);
+    transport::Serial::SaveBase(fname, catalogue_, render_rettings_, router_);
 }
 
 void JsonReader::BaseLoad(transport::TransportRouter& router_) {
@@ -94,7 +94,7 @@ void JsonReader::BaseLoad(transport::TransportRouter& router_) {
     if(serial_sets_it == root_node_.AsDict().end()) return;
     auto& serial_sets = serial_sets_it->second.AsDict();
     auto& fname = serial_sets["file"s].AsString();
-    transport::Serial::BaseLoad(fname, catalogue_, render_rettings_, router_);
+    transport::Serial::LoadBase(fname, catalogue_, render_rettings_, router_);
 }
 
 json::Dict JsonReader::ExecQueryStop(std:: string stop_name, int req_id){
